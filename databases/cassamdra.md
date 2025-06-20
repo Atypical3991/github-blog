@@ -148,3 +148,106 @@ By default, Cassandra uses a batch log to ensure all operations in a batch event
 
 There is a performance penalty for batch atomicity when a batch spans multiple partitions. If you do not want to incur this penalty, you can tell Cassandra to skip the batchlog with the UNLOGGED option. If the UNLOGGED option is used, a failed batch might leave the batch only partly applied.
 
+#### DDM (Dynamic Data Masking)
+
+Dynamic data masking (DDM) obscures sensitive information while still allowing access to the masked columns. DDM doesn’t alter the stored data. Instead, it just presents the data in its obscured form during SELECT queries. However, anyone with direct access to the SSTable files will be able to read the clear data.
+
+A masking function can be permanently attached to any column of a table. If a masking column is defined, SELECT queries will always return the column values in their masked form. The masking will be transparent to the users running SELECT queries. The only way to know that a column is masked is to consult the table definition.
+
+Ordinary users are created without the UNMASK permission and will see masked values. Giving a user the UNMASK permission allows them to retrieve the unmasked values of masked columns. Superusers are automatically created with the UNMASK permission, and will see the unmasked values in a SELECT query results.
+
+User-defined functions (UDFs) can be attached to a table column. The UDFs used for masking should belong to the same keyspace as the masked table. 
+
+## Indexing Concepts
+
+### Primary indexing
+The primary index is the partition key in Apache Cassandra. The storage engine of Apache Cassandra uses the partition key to store rows of data, and the most efficient and fast lookup of data matches the partition key.
+
+### Storage-attached indexing (SAI)
+SAI uses indexes for non-partition columns, and attaches the indexing information to the SSTables that store the rows of data. The indexes are located on the same node as the SSTable, and are updated when the SSTable is updated. SAI is the most appropriate indexing method for most use cases.
+
+### Secondary indexing (2i)
+Secondary indexing is the original built-in indexing written for Apache Cassandra. These indexes are all local indexes, stored in a hidden table on each node of a Apache Cassandra cluster, separate from the table that contains the values being indexed. The index must be read from the node. This indexing method is only recommended when used in conjunction with a partition key.
+
+
+### Storage-attached indexing (SAI) concepts
+Storage-Attached Indexing (SAI) is a highly-scalable, globally-distributed index for Cassandra databases.
+
+The main advantage of SAI over existing indexes for Apache Cassandra are:
+* enables vector search for AI applications
+* shares common index data across multiple indexes on same table
+* alleviates write-time scalability issues
+* significantly reduced disk usage
+* great numeric range performance
+* zero copy streaming of indexes
+
+SAI enables queries that filter based on:
+vector embeddings
+* AND/OR logic for numeric and text types
+* IN logic (use an array of values) for numeric and text types
+* numeric range
+* non-variable length numeric types
+* text type equality
+* CONTAINs logic (for collections)
+* tokenized data
+* row-aware query path
+* case sensitivity (optional)
+* unicode normalization (optional)
+
+SAI is deeply integrated with the storage engine of Cassandra.
+
+SAI is also fully compatible with zero-copy streaming (ZCS). Thus, when you bootstrap or decommission nodes in a cluster, the indexes are fully streamed with the SSTables and not serialized or rebuilt on the receiving node’s end.
+
+SAI is deeply integrated with the storage engine of the underlying database. SAI does not abstractly index tables. Instead, SAI indexes Memtables and Sorted String Tables (SSTables) as they are written, resolving the differences between those indexes at read time. 
+
+
+## Materialized Views
+The CREATE MATERIALIZED VIEW statement creates a new materialized view. Each such view is a set of rows which corresponds to rows which are present in the underlying, or base, table specified in the SELECT statement. A materialized view cannot be directly updated, but updates to the base table will cause corresponding updates in the view.
+
+A view must have a primary key and that primary key must conform to the following restrictions:
+* it must contain all the primary key columns of the base table. This ensures that every row of the view correspond to exactly one row of the base table.
+* it can only contain a single column that is not a primary key column in the base table.
+
+##  Functions
+CQL supports 2 main categories of functions:
+1. scalar functions that take a number of values and produce an output
+2. aggregate functions that aggregate multiple rows resulting from a SELECT statemet
+
+User-defined functions (UDFs) execute user-provided code in Cassandra. By default, Cassandra supports defining functions in Java.
+
+UDFs are part of the Cassandra schema, and are automatically propagated to all nodes in the cluster. UDFs can be overloaded, so that multiple UDFs with different argument types can have the same function name.
+
+User-defined aggregates allow the creation of custom aggregate functions. User-defined aggregates can be used in SELECT statement.
+
+## Triggers
+Cassandra supports Triggers. The below ops can be performed agaist Triggers.
+1. Create Trigger
+2. Drop Trigger
+
+The actual logic that makes up the trigger can be written in any Java (JVM) language and exists outside the database. You place the trigger code in a lib/triggers subdirectory of the Cassandra installation directory, it loads during cluster startup, and exists on every node that participates in a cluster. The trigger defined on a table fires before a requested DML statement occurs, which ensures the atomicity of the transaction.
+
+## Vector Search
+Vector Search is a new feature added to Cassandra 5.0. It is a powerful technique for finding relevant content within large document collections and is particularly useful for AI applications.
+
+## Backups
+
+Apache Cassandra stores data in immutable SSTable files. Backups in Apache Cassandra database are backup copies of the database data that is stored as SSTable files. Backups are used for several purposes including the following:
+* To store a data copy for durability
+* To be able to restore a table if table data is lost due to node/partition/network failure
+* To be able to transfer the SSTable files to a different machine; for portability
+
+Types of Backups:
+1. Snapshots: A hard-link copy of all SSTables at a point in time
+2. Incremental Backups: Copies of SSTables that have changed since the last snapshot
+
+## Bloom Filters
+In the read path, Cassandra merges data on disk (in SSTables) with data in RAM (in memtables). To avoid checking every SSTable data file for the partition being requested, Cassandra employs a data structure known as a bloom filter.
+
+Bloom filters are a probabilistic data structure that allows Cassandra to determine one of two possible states: - The data definitely does not exist in the given file, or - The data probably exists in the given file.
+
+## CDC
+Change data capture (CDC) provides a mechanism to flag specific tables for archival as well as rejecting writes to those tables once a configurable size-on-disk for the CDC log is reached. 
+
+How CDC Works in Cassandra:
+* When CDC is enabled on a table: Cassandra writes data mutations to special commit logs called CDC logs (in a separate location)
+* These logs are in a binary format, and tools like Apache Flink, Kafka Connect, or custom scripts can process them
