@@ -92,23 +92,29 @@ Apache Cassandra supports a wide set of data types that fall into three categori
 Below is a detailed breakdown of all data types supported by Cassandra
 
 1. Scalar Data Types (Primitives)
-| Data Type          | Description                            | Example                |
-|--------------------|----------------------------------------|------------------------|
-| `ascii`            | ASCII string (US-ASCII)                | `'Hello'`              |
-| `text` / `varchar` | UTF-8 encoded string                   | `'Hello World'`        |
-| `int`              | 32-bit signed integer                  | `123`                  |
-| `bigint`           | 64-bit signed integer                  | `1234567890123`        |
-| `varint`           | Arbitrary-precision integer            | `12345678901234567890` |
-| `float`            | 32-bit floating point                  | `12.34`                |
-| `double`           | 64-bit floating point                  | `123456.789`           |
-| `decimal`          | Variable-precision decimal             | `12.3456`              |
-| `boolean`          | Boolean value                          | `true`                 |
-| `uuid`             | Random UUID (v4)                       | `4e7f8e3c-1234-5678...`|
-| `timeuuid`         | Time-based UUID (v1), sortable by time | `c3b9a040-...`         |
-| `timestamp`        | Date and time with milliseconds        | `'2024-06-21 10:30'`   |
-| `date`             | Date only (YYYY-MM-DD)                 | `'2024-06-21'`         |
-| `time`             | Time only (HH:MM:SS.nanoseconds)       | `'10:45:30.123'`       |
-| `inet`             | IP address (IPv4 or IPv6)              | `'192.168.1.1'`        |
+
+| **Data Type**       | **Description**                          | **Example**               |
+|---------------------|------------------------------------------|---------------------------|
+| `ascii`             | ASCII string (US-ASCII)                  | `'Hello'`                 |
+| `text` / `varchar`  | UTF-8 encoded string                     | `'Hello World'`           |
+| `int`               | 32-bit signed integer                    | `123`                     |
+| `bigint`            | 64-bit signed integer                    | `1234567890123`           |
+| `varint`            | Arbitrary-precision integer              | `12345678901234567890`    |
+| `float`             | 32-bit floating point                    | `12.34`                   |
+| `double`            | 64-bit floating point                    | `123456.789`              |
+| `decimal`           | Variable-precision decimal               | `12.3456`                 |
+| `boolean`           | Boolean value                            | `true`                    |
+| `uuid`              | Random UUID (v4)                         | `4e7f8e3c-1234-5678...`   |
+| `timeuuid`          | Time-based UUID (v1), sortable by time   | `c3b9a040-...`            |
+| `timestamp`         | Date & time with milliseconds            | `'2024-06-21 10:30'`      |
+| `date`              | Date only (YYYY-MM-DD)                   | `'2024-06-21'`            |
+| `time`              | Time only (HH:MM:SS.nanoseconds)         | `'10:45:30.123'`          |
+| `inet`              | IP address (IPv4 or IPv6)                | `'192.168.1.1'`           |
+| `blob`              | Arbitrary binary data                    | `0x1234abcd`              |
+| `duration`          | Time duration (e.g., 3mo2d10h)            | `3mo2d10h`                |
+| `smallint`          | 16-bit integer (Cassandra 4.0+)          | `1000`                    |
+| `tinyint`           | 8-bit integer (Cassandra 4.0+)           | `127`                     |
+1'`        |
 | `blob`             | Arbitrary binary data (bytes)          | `0x1234abcd`           |
 | `duration`         | Time duration (Cassandra 4.0+)         | `3mo2d10h`             |
 | `smallint`         | 16-bit integer (Cassandra 4.0+)        | `1000`                 |
@@ -116,11 +122,12 @@ Below is a detailed breakdown of all data types supported by Cassandra
 
 
 2. Collection Types
-| Collection  | Syntax           | Description                |
-| ----------- | ---------------- | -------------------------- |
-| `list<T>`   | `list<int>`      | Ordered, allows duplicates |
-| `set<T>`    | `set<text>`      | Unordered, unique elements |
-| `map<K, V>` | `map<text, int>` | Key-value pairs            |
+
+| **Collection** | **Syntax Example**   | **Description**                      |
+|----------------|----------------------|--------------------------------------|
+| `list<T>`      | `list<int>`          | Ordered collection, allows duplicates |
+| `set<T>`       | `set<text>`          | Unordered collection, unique elements |
+| `map<K, V>`    | `map<text, int>`     | Key-value pairs                      |
 
 3. User-Defined Types (UDTs)
 Define complex, structured types — similar to a record or struct.
