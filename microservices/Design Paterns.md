@@ -1,95 +1,130 @@
 # Microservices Design Patterns
 
-## Architectural style
-Which architectural style should you choose for an application?
-* Monolithic Architecture: architect an application as a single deployable unit
-* Microservices Architecture: architect an application as a collection of independently deployable, loosely coupled services
-
-## Decomposition Patterns
-### Decomposition by business capabilities
-Define services corresponding to business capabilities. A business capability is a concept from business architecture modeling. It is something that a business does in order to generate value. A business capability often corresponds to a business object, e.g.
-* Order Management is responsible for orders
-* Customer Management is responsible for customers
-
-### Decompose by Subdomain (DDD)
-Decompose using Domain-Driven Design bounded contexts.
-
-The subdomains of an online store include:
-* User Management in the Customer context.
-* Pricing Engine in the Sales context.
-
-## Integration Patterns
-### API Gateway
-Central entry point for clients.
-
-For e.g. Zuul, Kong, or AWS API Gateway routes /api/orders to Order Service.
-
-### Aggregator Pattern
-A service composes responses from multiple microservices.
-
-For e.g.
-ProductDetailsService calls InventoryService, PriceService, and ReviewService and combines the results.
-
-## Database Patterns
-### Database per Service
-Each microservice owns its schema.
-For e.g. 
-* OrderService → orders_db
-* UserService → users_db
-
-### Shared Database (Anti-pattern)
-Only used temporarily when refactoring monoliths.
-Note: Can create tight coupling and scalability issues.
-
-## Communication Patterns
-### Synchronous REST/HTTP
-For e.g. OrderService calls PaymentService via REST during checkout.
-### Asynchronous Messaging (Event-Driven)
-For e.g. OrderService publishes OrderCreated → InventoryService and EmailService consume the event.
-
-## Resiliency Patterns
-### Circuit Breaker
-For e.g. If PaymentService is down, the Circuit Breaker (like Netflix Hystrix) prevents repeated failures from affecting OrderService.
-### Retry
-For e.g. Retry calling a failed external API up to 3 times with exponential backoff.
-### Bulkhead
-For e.g. Limit concurrent requests to a service to isolate failure. Usage of connection pooling pods.
-
-## Observability Patterns
-### Log Aggregation
-For e.g. Use ELK Stack or Grafana Loki to aggregate logs from all services.
-### Distributed Tracing
-For e.g. Use Jaeger or Zipkin to trace a request from API Gateway → OrderService → PaymentService.
-
-## Data Consistency Patterns
-### Saga Pattern
-For e.g. 
-For order placement:
-* OrderService creates an order.
-* Sends event → InventoryService reserves stock.
-* → PaymentService charges payment.
-* If any step fails, compensating transactions are executed.
-
-### Event Sourcing
-Persist state changes as events.
-For e.g. OrderService stores OrderPlaced, OrderConfirmed events and reconstructs state from them.
+Here’s a concise but practical breakdown of common microservices patterns and when to use them, with real-world guidance for architects and developers.
 
 
-## Security Patterns
-### Access Token Propagation
-For e.g. JWT token from client is propagated to all services for authorization.
+## API Gateway Pattern
 
-### Service-to-Service Authentication
-For e.g. Use mTLS or service mesh like Istio for secure internal communication. Authentication gets handled at mesh level.
+### What:
+A single entry point for all clients that routes requests to appropriate microservices.
 
-## Deployment Patterns
-### Service per Host / Container
-For e.g. OrderService runs in its own Docker container or Kubernetes Pod.
-### Serverless Functions
-For e.g. Use AWS Lambda for EmailNotificationService.
+### Use When:
+* You need centralized routing, auth, rate limiting, or versioning
+* Want to hide internal services and reduce client-side complexity
 
-## UI Patterns
-### Backend for Frontend (BFF)
-Create a dedicated API for each frontend (mobile/web).
-For e.g. MobileBFF for mobile clients, WebBFF for web apps.
+### Tools:
+AWS API Gateway, NGINX, Kong, Istio Ingress
 
+## Service Discovery Pattern
+
+### What:
+Services automatically register themselves and discover each other without hard-coded addresses.
+
+### Use When:
+* You have dynamic scaling (containers, autoscaling)
+* Services are short-lived (e.g., ECS, Kubernetes)
+
+### Tools:
+Eureka, Consul, AWS Cloud Map, Kubernetes DNS
+
+## Strangler Fig Pattern
+### What:
+Gradually replace a monolith by routing specific calls to new microservices while leaving the rest untouched.
+
+### Use When:
+* Migrating legacy monoliths to microservices incrementally
+* You need backward compatibility
+
+### Tools:
+API Gateway, ELB rules, feature flags, routing logic
+
+## Database per Service Pattern
+### What:
+Each microservice has its own isolated database.
+
+###  Use When:
+* You want true decoupling
+* Avoid cross-service transactions and improve autonomy
+
+### Caveats:
+Harder to do multi-service joins → Use events or API composition
+
+## CQRS (Command Query Responsibility Segregation)
+### What:
+Separate models for read and write operations.
+
+### Use When:
+* You have high read/write imbalance
+* Need event sourcing, audit logs, or complex queries
+
+### Common in:
+Banking systems, e-commerce carts, inventory
+
+## Saga Pattern (Distributed Transactions)
+### What:
+Manages distributed transactions using compensating actions instead of 2PC.
+
+### Use When:
+* You need eventual consistency across services
+* Example: booking system (reserve → pay → confirm)
+
+### Variants:
+* Choreography (event-driven)
+* Orchestration (central controller)
+
+## Event Sourcing Pattern
+### What:
+Instead of storing the current state, you store all events that led to it.
+
+### Use When:
+* You need auditability, replay, or temporal data
+* Fits well with CQRS
+
+
+## Bulkhead Pattern
+### What:
+Isolate parts of the system so a failure in one doesn't bring down others.
+
+### Use When:
+* You want to limit failure scope (e.g., isolate high-latency services)
+* Think of it like fuses between components
+
+
+## Circuit Breaker Pattern
+### What:
+Detects failures and short-circuits requests to failing services temporarily.
+
+### Use When:
+* Calling unreliable services (e.g., third-party APIs)
+* Preventing cascading failures
+
+### Tools:
+Resilience4j, Hystrix (legacy), Istio retry policies
+
+
+## Sidecar Pattern
+### What:
+Attach a sidecar container to a service for cross-cutting concerns (logging, metrics, TLS, etc.)
+
+### Use When:
+* Using service mesh
+* Need observability or transparent retries/timeouts
+
+### Tools:
+Envoy, Istio, Linkerd
+
+## API Composition Pattern
+### What:
+A composite service aggregates data from multiple services for the client.
+
+### Use When:
+* You need to avoid frontend over-fetching
+* Clients depend on data from multiple microservices
+
+## Backend for Frontend (BFF)
+### What:
+Each client type (web, mobile) gets its own backend tailored to its needs.
+
+### Use When:
+* You want optimized APIs for different UIs
+* Avoid exposing internal APIs directly to the frontend
